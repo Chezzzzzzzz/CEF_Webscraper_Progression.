@@ -2,10 +2,7 @@
 import time, re, csv, requests, datetime
 
 UA = {"User-Agent": "YourName your.email@example.com"}  # REQUIRED by SEC
-TICKERS = ["ATEN", "BDC", "CACI", "CYBR", "DOX", "DUOL", "EXLS", "EXOD", "FARO",
-    "GRRR", "GWRE", "HIVE", "HOOD", "IDT", "IRTC", "ITRI", "JCI", "NET",
-    "OKTA", "OUST", "QBTS", "RDVT", "RIOT", "SDGR", "SSNC", "TDS", "TOST",
-    "TW", "USM", "ZS"]  # edit your tickers here
+TICKERS = []  # edit your tickers here
 FORMS = {"8-K","25","25-NSE","15-12B","15-12G","15-15D","S-4","F-4",
          "DEFM14A","PREM14A","SC 13E3","SC 13E-3","TO-T","TO-I","14D-9",
          "6-K","N-8F","497"}
@@ -100,3 +97,4 @@ if __name__ == "__main__":
     rows = scan(TICKERS)
     write_csv(rows)
     print("Wrote tradeability_risk_events.csv")
+
