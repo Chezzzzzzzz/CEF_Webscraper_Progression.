@@ -1,0 +1,255 @@
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --chrome-h:    46px;
+  --bg:          #0f0f13;
+  --chrome-bg:   #16161f;
+  --border:      #2a2a3a;
+  --text:        #ddddf0;
+  --text-muted:  #77778a;
+  --tab-active:  #1e1e2e;
+  --accent-gpt:  #10a37f;
+  --accent-cld:  #d97757;
+  --radius:      8px;
+  --font:        'Segoe UI', system-ui, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+}
+
+.hidden { display: none !important; }
+
+/* ── Chrome bar ───────────────────────────────────────────────────────────── */
+#chrome {
+  height: var(--chrome-h);
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  user-select: none;
+  -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 10;
+}
+
+/* macOS: top-left space for traffic lights */
+#drag-region {
+  -webkit-app-region: drag;
+  width: 76px;
+  height: 100%;
+  flex-shrink: 0;
+}
+@media (not (platform: darwin)) { #drag-region { width: 0; } }
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+#tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.tab:hover { background: var(--tab-active); color: var(--text); }
+
+.tab.active {
+  background: var(--tab-active);
+  border-color: var(--border);
+  color: var(--text);
+}
+.tab.active[data-tab="chatgpt"] { border-bottom-color: var(--accent-gpt); }
+.tab.active[data-tab="claude"]  { border-bottom-color: var(--accent-cld); }
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Loading indicator dot inside tab */
+.tab-status {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background .3s;
+}
+.tab-status.loading {
+  background: #f0b030;
+  animation: pulse .8s infinite;
+}
+.tab-status.ready { background: #40c060; }
+
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* ── Centre hint ─────────────────────────────────────────────────────────── */
+#shortcut-hint {
+  flex: 1;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* ── Right controls ──────────────────────────────────────────────────────── */
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#controls button {
+  padding: 5px 11px;
+  background: #23232f;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+#controls button:hover { background: #2e2e3e; }
+
+#btn-bridge { color: #a0c0ff; }
+#btn-reload { padding: 5px 9px; font-size: 15px; }
+
+/* ── Bridge panel ────────────────────────────────────────────────────────── */
+#bridge-panel {
+  background: #1a1a26;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 9;
+  animation: slideDown .18s ease;
+}
+@keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } }
+
+#bridge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+#bridge-from-label strong { color: var(--text); }
+
+#bridge-actions { display: flex; gap: 8px; }
+
+#btn-send-bridge {
+  padding: 4px 12px;
+  background: #3a4adf;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#btn-send-bridge:hover { background: #4a5aef; }
+
+#btn-dismiss-bridge {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+#btn-dismiss-bridge:hover { color: var(--text); }
+
+#bridge-text {
+  background: #0f0f18;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  resize: vertical;
+  min-height: 80px;
+  max-height: 240px;
+  font-family: var(--font);
+  outline: none;
+}
+#bridge-text:focus { border-color: #3a4adf; }
+
+#bridge-hint { font-size: 11px; color: var(--text-muted); }
+
+/* ── WebView container ───────────────────────────────────────────────────── */
+#views {
+  display: flex;
+  width: 100%;
+  /* Height fills remaining space below chrome (and bridge panel when open) */
+  height: calc(100vh - var(--chrome-h));
+  position: relative;
+}
+
+/* Bridge panel open: reduce webview height by bridge panel height.
+   JS toggles a data attribute on body. */
+body[data-bridge-open] #views {
+  height: calc(100vh - var(--chrome-h) - var(--bridge-h, 170px));
+}
+
+webview {
+  flex: 1;
+  height: 100%;
+  border: none;
+}
+webview.hidden { display: none; }
+
+/* Split view: both webviews side-by-side */
+body[data-split] webview         { display: flex !important; }
+body[data-split] webview.hidden  { display: flex !important; }
+
+/* ── Loading overlay ──────────────────────────────────────────────────────── */
+#loading-overlay {
+  position: fixed;
+  inset: var(--chrome-h) 0 0 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: #5b6af0;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loading-label { color: var(--text-muted); font-size: 13px; }

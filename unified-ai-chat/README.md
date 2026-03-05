@@ -1,115 +1,100 @@
 # Unified AI Chat
 
-A single-thread chat interface that lets you switch between **OpenAI (ChatGPT)**
-and **Anthropic (Claude)** mid-conversation — full history preserved at all times.
+One desktop window. Two real AI interfaces. Zero context loss.
+
+Log in to **ChatGPT** and **Claude** once — then switch between them
+instantly without leaving the app. Use the **Context Bridge** to grab
+the last reply from one AI and send it directly into the other's input box.
 
 ---
 
-## Architecture
+## How it works
+
+This is an **Electron app** that embeds the real `chatgpt.com` and
+`claude.ai` web interfaces inside two persistent WebViews. Each site
+gets its own isolated browser session (cookies, storage, logins) so
+you stay logged in to both independently.
 
 ```
-unified-ai-chat/
-├── backend/
-│   ├── main.py                  # FastAPI app — REST + SSE streaming endpoints
-│   ├── models.py                # Pydantic data models
-│   ├── conversation.py          # Thread-safe in-memory conversation store
-│   ├── providers/
-│   │   ├── openai_provider.py   # OpenAI async wrapper (streaming + non-streaming)
-│   │   └── claude_provider.py   # Anthropic async wrapper (streaming + non-streaming)
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html               # Single-page UI
-│   ├── style.css                # Dark-theme styles
-│   └── app.js                   # Vanilla JS — SSE consumer, state, DOM
-└── .env.example
+┌─────────────────────────────────────────────────┐
+│  [ChatGPT ●]  [Claude]   ⌘1/⌘2  🔀 Bridge  ⊞ Split  │  ← Chrome bar
+├─────────────────────────────────────────────────┤
+│                                                 │
+│         chatgpt.com  (real web UI)              │  ← WebView A
+│         claude.ai    (hidden)                   │  ← WebView B
+│                                                 │
+└─────────────────────────────────────────────────┘
 ```
 
-### Key design decisions
+---
 
-| Concern | Approach |
+## Features
+
+| Feature | How to use |
 |---|---|
-| **Unified history** | Normalized `{role, content}` list — identical format for both APIs |
-| **Provider switch** | Just pass the same history to the new provider — no transforms needed |
-| **Claude quirks** | Auto-merge consecutive same-role turns; strip leading assistant messages |
-| **Streaming** | Server-Sent Events (SSE) — works without WebSockets, easy to proxy |
-| **State** | In-memory dict (dev). Swap `ConversationStore` for Redis/Postgres in prod |
+| **Switch AI** | Click the tab or press **⌘1** (ChatGPT) / **⌘2** (Claude) |
+| **Context Bridge** | Press **🔀 Bridge context** (or **⌘⇧C**) to grab the last reply from the *other* AI, edit it, then inject it into the current AI's input box |
+| **Split view** | Click **⊞ Split** to see both side-by-side |
+| **Reload tab** | Click **↺** or press **⌘R** |
+| **Persistent logins** | Each webview uses its own `persist:` session partition — logins survive restarts |
 
 ---
 
 ## Quick start
 
-### 1. Clone & enter directory
+### Prerequisites
+- [Node.js](https://nodejs.org) 18+
+
+### Install & run
 ```bash
 cd unified-ai-chat
+npm install
+npm start
 ```
 
-### 2. Set API keys
+### Build distributable
 ```bash
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY and ANTHROPIC_API_KEY
-```
-
-### 3. Install dependencies
-```bash
-pip install -r backend/requirements.txt
-```
-
-### 4. Run the server
-```bash
-cd backend
-python -m dotenv run -- python main.py
-# or: uvicorn main:app --reload --port 8000
-```
-
-### 5. Open the app
-Visit [http://localhost:8000](http://localhost:8000) — the backend serves the frontend automatically.
-
----
-
-## API reference
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET`  | `/api/models` | List available models per provider |
-| `GET`  | `/api/conversations` | All conversations (id + title) |
-| `GET`  | `/api/conversations/{id}` | Full message history |
-| `DELETE` | `/api/conversations/{id}` | Delete a conversation |
-| `POST` | `/api/chat` | Non-streaming single reply |
-| `POST` | `/api/chat/stream` | **SSE streaming reply** |
-
-### POST `/api/chat/stream` — request body
-```json
-{
-  "conversation_id": "optional-uuid",
-  "message": "Explain async generators in Python",
-  "provider": "openai",
-  "model": "gpt-4o",
-  "system_prompt": "You are a concise assistant.",
-  "stream": true
-}
-```
-
-### SSE event types
-```
-data: {"type":"meta",  "conversation_id":"...", "message_id":"...", "model":"gpt-4o"}
-data: {"type":"chunk", "content":"..."}
-data: {"type":"done"}
-data: {"type":"error", "detail":"..."}
+npm run build:linux   # → AppImage
+npm run build:win     # → NSIS installer
+npm run build:mac     # → DMG
 ```
 
 ---
 
-## Tech stack
+## File structure
 
-- **Backend**: Python 3.11+, FastAPI, Uvicorn, openai SDK, anthropic SDK
-- **Frontend**: Vanilla HTML/CSS/JS (no build step, no framework dependency)
-- **Streaming**: Server-Sent Events (EventSource compatible)
+```
+unified-ai-chat/
+├── package.json
+└── src/
+    ├── main.js          # Electron main process — window, menu, webContents policy
+    ├── preload.js       # contextBridge exposing IPC to renderer
+    └── renderer/
+        ├── index.html   # Chrome bar + <webview> tags
+        ├── style.css    # Dark theme
+        ├── renderer.js  # Tab switching, bridge logic, loading indicators
+        └── icons/
+            ├── chatgpt.svg
+            └── claude.svg
+```
 
 ---
 
-## Production notes
+## Context bridge — detailed flow
 
-- Replace `ConversationStore` (in-memory) with Redis or a database
-- Add authentication (JWT / API key header)
-- Set `allow_origins` in CORS middleware to your actual domain
-- Deploy the backend with `gunicorn -k uvicorn.workers.UvicornWorker main:app`
+1. You're chatting with **ChatGPT**. Claude gave you useful background earlier.
+2. Press **⌘⇧C** (or click **🔀 Bridge context**).
+3. Electron runs `executeJavaScript` in the **Claude WebView** to extract the
+   last assistant reply from the DOM.
+4. The reply appears in an editable panel — you can trim or annotate it.
+5. Click **Send to ChatGPT ➤** — Electron injects the text into ChatGPT's
+   input field using `executeJavaScript`. You just press Enter to send.
+
+---
+
+## Notes
+
+- No API keys required — you use your own accounts on each site.
+- External links (OAuth flows, etc.) open in your system browser.
+- The bridge DOM selectors may need updating if ChatGPT or Claude
+  significantly change their frontend markup.

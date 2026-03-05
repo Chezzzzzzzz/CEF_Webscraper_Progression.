@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';" />
+  <title>Unified AI Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Top chrome bar ──────────────────────────────────────────────────── -->
+  <div id="chrome">
+
+    <!-- Drag region (macOS hidden titlebar) -->
+    <div id="drag-region"></div>
+
+    <!-- Tab buttons -->
+    <div id="tabs">
+      <button class="tab active" data-tab="chatgpt" id="tab-chatgpt">
+        <img src="icons/chatgpt.svg" class="tab-icon" alt="" />
+        ChatGPT
+        <span class="tab-status" id="status-chatgpt"></span>
+      </button>
+      <button class="tab" data-tab="claude" id="tab-claude">
+        <img src="icons/claude.svg" class="tab-icon" alt="" />
+        Claude
+        <span class="tab-status" id="status-claude"></span>
+      </button>
+    </div>
+
+    <!-- Centre: shortcut hint -->
+    <div id="shortcut-hint">⌘1 / ⌘2 to switch &nbsp;·&nbsp; ⌘⇧C to bridge context</div>
+
+    <!-- Right controls -->
+    <div id="controls">
+      <button id="btn-bridge" title="Copy last reply into the other AI's input (⌘⇧C)">
+        🔀 Bridge context
+      </button>
+      <button id="btn-split" title="Toggle side-by-side split view">
+        ⊞ Split
+      </button>
+      <button id="btn-reload" title="Reload active tab">↺</button>
+    </div>
+
+  </div><!-- /#chrome -->
+
+  <!-- ── Context bridge panel ────────────────────────────────────────────── -->
+  <div id="bridge-panel" class="hidden">
+    <div id="bridge-header">
+      <span id="bridge-from-label">Captured from <strong id="bridge-source">—</strong></span>
+      <span id="bridge-actions">
+        <button id="btn-send-bridge">Send to <span id="bridge-dest">—</span> ➤</button>
+        <button id="btn-dismiss-bridge">✕</button>
+      </span>
+    </div>
+    <textarea id="bridge-text" spellcheck="false" placeholder="Captured reply will appear here…"></textarea>
+    <div id="bridge-hint">
+      Edit freely before sending. The text will be pasted into the other AI's input box.
+    </div>
+  </div>
+
+  <!-- ── WebView container ───────────────────────────────────────────────── -->
+  <div id="views">
+
+    <!-- ChatGPT — uses its own persistent session so logins survive restarts -->
+    <webview
+      id="wv-chatgpt"
+      src="https://chatgpt.com"
+      partition="persist:chatgpt"
+      allowpopups
+      useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ></webview>
+
+    <!-- Claude — own partition -->
+    <webview
+      id="wv-claude"
+      src="https://claude.ai"
+      partition="persist:claude"
+      allowpopups
+      useragent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+      class="hidden"
+    ></webview>
+
+  </div><!-- /#views -->
+
+  <!-- ── Loading overlay ────────────────────────────────────────────────── -->
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+    <span id="loading-label">Loading…</span>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
